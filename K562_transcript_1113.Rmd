@@ -1,0 +1,78 @@
+
+
+```{r}
+setwd('/Users/yun/downloads/')
+```
+
+```{r}
+df <- read.table("CCLE_RNAseq_rsem_transcripts_tpm_20180929.txt", header = TRUE)
+```
+```{r}
+install.packages('tidyverse')
+```
+```{r}
+library('tidyverse')
+```
+```{r}
+df$K562_HAEMATOPOIETIC_AND_LYMPHOID_TISSUE
+```
+
+```{r}
+d1<-df%>%select(K562_HAEMATOPOIETIC_AND_LYMPHOID_TISSUE)
+```
+
+```{r}
+d2<-df%>%select(transcript_id)
+```
+
+```{r}
+data<-cbind(d2,d1)
+```
+
+
+```{r}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("biomaRt")
+```
+
+```{r}
+data$transcript_id<-str_sub(data$transcript_id,end = 15)
+```
+
+
+```{r}
+library('biomaRt')
+mart = useMart('ensembl')
+# list all the ensembl database of organisms
+listDatasets(mart)  
+#choose database of your interest ; in this case its "cfamiliaris_gene_ensembl" I guess
+ensembl = useMart( "ensembl", dataset = "hsapiens_gene_ensembl" )  
+# choose attributes of your interest
+listAttributes(ensembl)
+gene <- getBM( attributes = c("ensembl_transcript_id","hgnc_symbol"),values = data$transcript_id,mart = ensembl)  
+#Macth your transcript id with ensembl_transcript_id
+id <- match(data$transcript_id , gene$ensembl_transcript_id)
+#Add Gene symbol column in your data frame
+data$Symbol <- gene$hgnc_symbol[id]
+head(data)
+
+
+```
+```{r}
+data%>%filter(Symbol=='ALDOC')
+```
+
+```{r}
+data%>%summarize(mean(K562_HAEMATOPOIETIC_AND_LYMPHOID_TISSUE),sd(K562_HAEMATOPOIETIC_AND_LYMPHOID_TISSUE))
+```
+
+
+
+
+```{r}
+sum(is.na(data$Symbol))
+```
+
+
+
